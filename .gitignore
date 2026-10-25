@@ -1,0 +1,26 @@
+# Local execution state and credentials
+/.runtime/
+.env
+.env.*
+!.env.example
+*.log
+*.pid
+*.pem
+*.key
+*.p12
+world-monitor-settings*.json
+
+# Bundled executables belong in the Mac transfer ZIP, not source history.
+/runtime/**/bin/
+node_modules/
+*.zip
+*.tar.gz
+*.tgz
+
+# Machine-specific launchers and verification output
+/desktop-icons/
+/verification/
+
+# Finder metadata
+.DS_Store
+._*
