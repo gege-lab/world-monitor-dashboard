@@ -1,0 +1,54 @@
+* { letter-spacing: 0; }
+.workspace-grid {
+  grid-template-areas: "news map signals";
+  grid-template-columns: minmax(300px, 23fr) minmax(0, 54fr) minmax(250px, 23fr);
+}
+.feed-panel { grid-area: news; }
+.map-panel { grid-area: map; }
+.left-rail { grid-area: signals; }
+.article-list { display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
+.article-item { flex: 0 0 auto; height: auto; min-height: 165px; }
+.article-body { min-width: 0; }
+.article-title, .article-signal { overflow-wrap: anywhere; }
+.macro-date { color: #8ba2b8; font-size: 10px; }
+.trend-dock {
+  grid-template-columns: minmax(160px, .9fr) minmax(220px, 1.05fr) minmax(170px, .85fr) minmax(240px, 1.5fr) minmax(190px, 1fr);
+}
+.layer-panel { max-height: calc(100% - 50px); overflow-y: auto; }
+@media (max-width: 1120px) and (min-width: 861px) {
+  .workspace-grid { grid-template-columns: minmax(240px, .9fr) minmax(300px, 1.5fr) minmax(220px, .8fr); }
+  .trend-dock { overflow-x: auto; }
+}
+@media (max-width: 860px) {
+  .app-shell { min-height: 0; height: 100dvh; }
+  .topbar { flex-direction: row; flex-wrap: nowrap; height: 58px; align-items: center; justify-content: space-between; gap: 4px; }
+  .brand { min-width: 0; gap: 5px; flex: 1; }
+  .brand-title-row { gap: 0; }
+  .brand-title-row span, .source-status { display: none; }
+  .top-actions { flex-wrap: nowrap; gap: 6px; width: auto; justify-content: flex-end; }
+  .top-actions .icon-button { width: 32px; min-width: 32px; height: 32px; padding: 6px; }
+  .top-actions .icon-button svg { width: 17px; height: 17px; }
+  .dashboard { grid-template-rows: minmax(0, 1fr) 130px; }
+  .workspace-grid {
+    grid-template-areas: "map map" "news signals";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(180px, 1fr) 180px;
+  }
+  .left-rail { grid-template-rows: minmax(0, 1fr); }
+  .left-rail .spotlight-block { min-height: 0; }
+  .feed-panel .panel-header { flex-wrap: wrap; }
+  .feed-subtabs { overflow-x: auto; flex-shrink: 0; }
+  .article-item { min-height: 155px; padding-right: 8px; gap: 7px; }
+  .article-title { font-size: 12px; }
+  .article-meta { flex-wrap: wrap; }
+  .article-signal { font-size: 11px; }
+  .trend-dock {
+    height: 130px;
+    grid-template-columns: none;
+    grid-template-rows: minmax(0, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: 230px;
+    overflow-x: auto;
+  }
+  .map-mode-switch { right: 43px; }
+}

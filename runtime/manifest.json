@@ -1,0 +1,17 @@
+{
+  "version": "v22.23.3",
+  "source": "https://nodejs.org/dist/v22.23.3/",
+  "verifiedAt": "2026-10-08T12:50:24.426Z",
+  "architectures": {
+    "arm64": {
+      "archive": "node-v22.23.3-darwin-arm64.tar.gz",
+      "archiveSha256": "23b25245dcfb9af7262f8ff142e9e2e0af025368117329e7a7458a51e5922f53",
+      "executableSha256": "68f4d07ca49e0500cc135c7e0a445093e228e42e126ac22306d045f0a8c2636b"
+    },
+    "x64": {
+      "archive": "node-v22.23.3-darwin-x64.tar.gz",
+      "archiveSha256": "8a677b0219178efd6eb0e475457c4afb452b521a92f6e67845a73bd85727f2a8",
+      "executableSha256": "fdb8d4da9332c2c99c3b2ae4bad4672bfef225ecd603e656cd1378b3644583a2"
+    }
+  }
+}

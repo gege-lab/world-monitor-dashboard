@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>World Monitor AI / Tech</title>
+    <link rel="stylesheet" href="./styles.css?v=one-screen-74" />
+    <link rel="stylesheet" href="./restoration.css?v=20261004-final" />
+    <script src="./vendor/d3.min.js" defer></script>
+    <script src="./vendor/topojson-client.min.js" defer></script>
+    <script src="./vendor/lucide.min.js" defer></script>
+    <script type="module" src="./app.js?v=restored-20261004-final"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-icon"><i data-lucide="radio"></i></div>
+          <div>
+            <div class="brand-title-row">
+              <h1>WORLD MONITOR</h1>
+              <span>|</span>
+              <strong>ワールドモニター</strong>
+            </div>
+            <p>AI Intelligence Dashboard — グローバルAI情報モニター</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="source-status">
+            <span><b class="status-dot hn"></b>HN</span>
+            <span><b class="status-dot devto"></b>Dev.to</span>
+            <span><b class="status-dot github"></b>GitHub</span>
+          </div>
+          <div class="status-pill" id="liveStatus">
+            <span class="dot"></span>
+            <span>接続中</span>
+          </div>
+          <div class="timestamp" id="timestamp">--</div>
+          <button class="icon-button" id="refreshButton" type="button" aria-label="更新">
+            <i data-lucide="refresh-cw"></i>
+            <span>更新</span>
+          </button>
+          <button class="icon-button content-generate-button" id="contentButton" type="button" aria-label="コンテンツ生成" title="コンテンツ生成">
+            <i data-lucide="wand-sparkles"></i>
+            <span>コンテンツ生成</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="ai-ticker" aria-label="AI signal ticker">
+        <div class="ticker-label"><i data-lucide="zap"></i><span>AI SIGNAL</span></div>
+        <div class="ticker-viewport">
+          <div class="ticker-content" id="tickerContent">データ取得中...</div>
+        </div>
+      </section>
+
+      <section class="alert-strip" id="alertStrip" aria-label="緊急アラート"></section>
+
+      <nav class="region-tabs global-tabs" id="tabs" aria-label="地域タブ"></nav>
+
+      <main class="dashboard">
+        <section class="workspace-grid">
+          <aside class="left-rail panel">
+            <section class="panel-block spotlight-block">
+              <div class="panel-header">
+                <i data-lucide="brain"></i>
+                <span>AI スポットライト</span>
+                <b id="spotlightRegion">グローバル</b>
+              </div>
+              <div class="spotlight-tabs" id="spotlightTabs"></div>
+              <div class="spotlight-list" id="spotlightList"></div>
+            </section>
+
+            <section class="panel-block signal-block">
+              <div class="panel-header">
+                <i data-lucide="radar"></i>
+                <span>注目シグナル</span>
+              </div>
+              <div class="signal-strip" id="leadSignals"></div>
+            </section>
+          </aside>
+
+          <section class="map-panel">
+            <div class="map-header">
+              <div>
+                <h2>世界地図</h2>
+                <p id="mapSubtitle">AI・テックのシグナルを地域別に表示</p>
+              </div>
+              <div class="map-legend">
+                <span><b class="legend-dot ai"></b>AI / Tech</span>
+                <span><b class="legend-dot hq"></b>AI本社</span>
+                <span><b class="legend-line network"></b>接続ライン</span>
+                <span><b class="legend-dot risk"></b>Risk</span>
+              </div>
+            </div>
+            <div class="map-canvas" id="mapCanvas">
+              <div class="map-mode-switch" id="mapModeSwitch" aria-label="地図表示モード">
+                <button class="active" type="button" data-map-mode="2d">2D</button>
+                <button type="button" data-map-mode="3d">3D</button>
+              </div>
+              <div class="map-controls" aria-label="地図操作">
+                <button class="map-control-button" id="zoomInButton" type="button" title="ズームイン" aria-label="ズームイン">
+                  <i data-lucide="plus"></i>
+                </button>
+                <button class="map-control-button" id="zoomOutButton" type="button" title="ズームアウト" aria-label="ズームアウト">
+                  <i data-lucide="minus"></i>
+                </button>
+                <button class="map-control-button" id="zoomResetButton" type="button" title="全体表示に戻す" aria-label="全体表示に戻す">
+                  <i data-lucide="scan"></i>
+                </button>
+              </div>
+              <div class="layer-panel" id="layerPanel" aria-label="地図レイヤー設定"></div>
+              <div class="region-badge" id="regionBadge">世界 / World</div>
+              <div class="connection-key" aria-label="接続ライン凡例">
+                <span><b class="key-line cyan"></b>SV hub</span>
+                <span><b class="key-line orange"></b>半導体</span>
+                <span><b class="key-line pink"></b>中国</span>
+                <span><b class="key-line red"></b>日本</span>
+                <span><b class="key-line purple"></b>欧州</span>
+                <span><b class="key-line yellow"></b>韓国</span>
+              </div>
+              <div class="map-tile-layer" id="mapTileLayer" aria-hidden="true"></div>
+              <div class="globe-layer" id="globeLayer" aria-hidden="true">
+                <canvas id="globeCanvas"></canvas>
+                <div class="globe-overlay" id="globeOverlay"></div>
+              </div>
+              <svg id="worldMap" role="img" aria-label="World map"></svg>
+              <div class="map-tooltip" id="mapTooltip"></div>
+            </div>
+          </section>
+
+          <aside class="feed-panel panel">
+            <div class="panel-header">
+              <i data-lucide="bot"></i>
+              <span>最新ニュース</span>
+              <em id="feedTitle">世界</em>
+              <b id="feedCount">0件</b>
+            </div>
+            <div class="feed-subtabs" id="feedSubtabs"></div>
+            <p class="feed-subtitle" id="feedSubtitle">World</p>
+            <div class="article-list" id="articleList"></div>
+          </aside>
+        </section>
+
+        <section class="trend-dock" aria-label="今日のトレンドとステータス">
+          <section class="trend-card-block" data-dock="trends">
+            <div class="panel-header"><i data-lucide="git-branch"></i><span>今日のトレンド</span></div>
+            <div class="trend-list" id="trendList"></div>
+          </section>
+          <section class="trend-card-block" data-dock="macro">
+            <div class="panel-header"><i data-lucide="activity"></i><span>市場・電力</span></div>
+            <div class="macro-grid" id="macroGrid"></div>
+          </section>
+          <section class="trend-card-block" data-dock="status">
+            <div class="panel-header"><i data-lucide="shield-check"></i><span>基盤ステータス</span></div>
+            <div class="status-list" id="statusList"></div>
+          </section>
+          <section class="trend-card-block focus-block" data-dock="focus">
+            <div class="panel-header"><i data-lucide="globe-2"></i><span>世界情勢・経済</span></div>
+            <div class="focus-tabs" id="focusTabs"></div>
+            <div class="focus-list" id="focusList"></div>
+          </section>
+          <section class="trend-card-block infra-dock-block" data-dock="infra">
+            <div class="panel-header"><i data-lucide="server"></i><span>AIインフラ</span></div>
+            <div class="infra-list" id="infraList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="content-modal hidden" id="contentModal" aria-hidden="true">
+      <div class="content-modal-backdrop" data-content-close></div>
+      <section class="content-dialog" role="dialog" aria-modal="true" aria-labelledby="contentTitle">
+        <header class="content-dialog-header">
+          <div>
+            <div class="content-kicker"><i data-lucide="sparkles"></i><span>AI Content Pack</span></div>
+            <h2 id="contentTitle">投稿・配信ドラフト</h2>
+            <p id="contentMeta">最新シグナルから生成</p>
+          </div>
+          <button class="map-control-button content-close-button" id="contentCloseButton" type="button" aria-label="閉じる">
+            <i data-lucide="x"></i>
+          </button>
+        </header>
+        <div class="content-status-row">
+          <span id="contentTarget">対象: 世界</span>
+          <span id="contentGeneratedAt">--</span>
+        </div>
+        <div class="content-summary-strip" id="contentSummaryStrip"></div>
+        <div class="content-tabs" id="contentTabs"></div>
+        <textarea class="content-output" id="contentOutput" readonly spellcheck="false"></textarea>
+        <footer class="content-actions">
+          <span id="contentStatus">生成後にコピー・保存可</span>
+          <button class="icon-button" id="contentCopyButton" type="button">
+            <i data-lucide="copy"></i>
+            <span>コピー</span>
+          </button>
+          <button class="icon-button" id="contentDownloadButton" type="button">
+            <i data-lucide="download"></i>
+            <span>Markdown保存</span>
+          </button>
+          <button class="icon-button" id="contentDownloadAllButton" type="button" title="全コンテンツを一括保存" aria-label="全コンテンツを一括保存">
+            <i data-lucide="files"></i>
+          </button>
+        </footer>
+      </section>
+    </div>
+  </body>
+</html>
