@@ -1,4 +1,5 @@
 import { LEGACY_AI_LABS, LEGACY_DATA_CENTERS, LEGACY_DC_COLORS, LEGACY_LAB_COLORS } from "./legacy-world-monitor-data.js";
+import { safeExternalUrl, safeMarkdownUrl } from "./url-security.js";
 
 const state = {
   data: null,
@@ -649,7 +650,10 @@ async function loadDashboard(refresh) {
   setLiveStatus("loading", "更新中");
 
   try {
-    const response = await fetch(`/api/monitor${refresh ? "?refresh=1" : ""}`, { cache: "no-store" });
+    const response = await fetch(`/api/monitor${refresh ? "?refresh=1" : ""}`, {
+      cache: "no-store",
+      headers: { "X-World-Monitor-Request": "1" }
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     state.data = await response.json();
     state.lastDashboardLoadAt = Date.now();
@@ -737,7 +741,7 @@ function renderAlerts() {
   }
 
   const top = alerts[0];
-  dom.alertStrip.innerHTML = `<a class="alert-strip-inner active" href="${escapeAttr(top.url || "#")}" target="_blank" rel="noreferrer">
+  dom.alertStrip.innerHTML = `<a class="alert-strip-inner active" href="${safeExternalHref(top.url)}" target="_blank" rel="noreferrer">
     <span><i data-lucide="siren"></i> 緊急 ${alerts.length}件</span>
     <b>${escapeHtml(top.titleJa || top.title)}</b>
     <em>${escapeHtml(regionMeta[top.region]?.labelJa || "世界")} / ${escapeHtml(top.source || "News")} / ${Math.round(top.urgency || 0)}</em>
@@ -789,7 +793,7 @@ function renderLeadSignals() {
             <span>${escapeHtml(signal.labelJa)}</span>
             <span>${signal.live ? "Live" : "Fallback"}</span>
           </div>
-          <a href="${escapeAttr(signal.url || "#")}" target="_blank" rel="noreferrer">
+          <a href="${safeExternalHref(signal.url)}" target="_blank" rel="noreferrer">
             <h2>${escapeHtml(signal.titleJa)}</h2>
           </a>
         </div>
@@ -848,7 +852,7 @@ function renderSpotlight() {
   const articleItems = articles.slice(0, Math.max(4, 12 - repoItems.length)).map((article, index) => {
     const tags = (article.topics || []).slice(0, 2).map((topic) => `<span class="tag">${escapeHtml(topicLabel(topic))}</span>`).join("");
     const source = article.source || "News";
-    return `<a class="spotlight-card ${index === 0 ? "top" : "ai"}" style="--accent:${escapeAttr(active.color)}" href="${escapeAttr(article.url || "#")}" target="_blank" rel="noreferrer">
+    return `<a class="spotlight-card ${index === 0 ? "top" : "ai"}" style="--accent:${escapeAttr(active.color)}" href="${safeExternalHref(article.url)}" target="_blank" rel="noreferrer">
       <div class="spotlight-card-meta">
         <span>${escapeHtml(source)}</span>
         <span>${escapeHtml(formatRelative(article.publishedAt))}</span>
@@ -865,7 +869,7 @@ function renderSpotlight() {
 
 function repoTemplate(repo) {
     const stars = repo.stars >= 1000 ? `${(repo.stars / 1000).toFixed(1)}k` : String(repo.stars || 0);
-    return `<a class="spotlight-item repo" href="${escapeAttr(repo.url || "#")}" target="_blank" rel="noreferrer">
+    return `<a class="spotlight-item repo" href="${safeExternalHref(repo.url)}" target="_blank" rel="noreferrer">
       <div>
         <strong>${escapeHtml(repo.fullName || repo.name)}</strong>
         <span>${escapeHtml(repo.language || "GitHub")} / ${stars} stars</span>
@@ -1688,7 +1692,7 @@ ${second ? `2. ${normalizeOneLine(second.titleJa || second.title)}` : ""}
 ${third ? `3. ${normalizeOneLine(third.titleJa || third.title)}` : ""}
 
 出典: ${lead.source || lead.domain || "World Monitor"}
-${lead.url || ""}
+${safeExternalUrl(lead.url)}
 
 #生成AI #半導体 #AIニュース
 
@@ -1933,7 +1937,7 @@ function composeNotePost(pack) {
   const insight = topics.map((key) => CONTENT_TOPIC_INSIGHTS[key]).find(Boolean) || articleWhyItMatters(pack.lead);
   const macro = pack.macro.slice(0, 2).map(macroSummaryLine).filter(Boolean).join("、");
   const sources = picks
-    .map((article, index) => `${index + 1}. [${article.source || article.domain || "記事"}：${contentArticleTitle(article, 32)}](${article.url || "#"})`)
+    .map((article, index) => `${index + 1}. [${article.source || article.domain || "記事"}：${contentArticleTitle(article, 32)}](${safeMarkdownUrl(article.url) || "#"})`)
     .join("\n");
 
   return `# ${pack.regionJa}のAI・テックを読む：${clipText(leadTitle, 42)}
@@ -2029,7 +2033,7 @@ function composeSources(pack) {
   const articles = pack.topArticles.slice(0, 8);
   const lines = articles.map((article, index) => `${index + 1}. ${normalizeOneLine(article.titleJa || article.title)}
    Source: ${article.source || article.domain || "Source"} / ${formatRelative(article.publishedAt)} / Score ${article.contentScore || article.score || 0}
-   URL: ${article.url || "N/A"}`);
+   URL: ${safeExternalUrl(article.url) || "N/A"}`);
 
   return `# 出典リスト
 
@@ -2239,7 +2243,7 @@ function renderFocus() {
           <span>${escapeHtml(article.source || "")}</span>
           <span>${Math.round(article.worldEconomyScore || article.urgency || 0)}</span>
         </div>
-        <a href="${escapeAttr(article.url || "#")}" target="_blank" rel="noreferrer">${escapeHtml(article.titleJa || article.title)}</a>
+        <a href="${safeExternalHref(article.url)}" target="_blank" rel="noreferrer">${escapeHtml(article.titleJa || article.title)}</a>
         <div class="tag-row">${tags}</div>
       </article>`;
     })
@@ -2359,7 +2363,7 @@ function articleTemplate(article) {
         <span>${escapeHtml(article.source || "Source")}</span>
         <span>${formatRelative(article.publishedAt)}</span>
       </div>
-      <a class="article-title" href="${escapeAttr(article.url || "#")}" target="_blank" rel="noreferrer"${titleAttr}>${escapeHtml(article.titleJa || article.title)}</a>
+      <a class="article-title" href="${safeExternalHref(article.url)}" target="_blank" rel="noreferrer"${titleAttr}>${escapeHtml(article.titleJa || article.title)}</a>
       <p class="article-signal">${escapeHtml(article.signalJa || "")}</p>
       <div class="tag-row">${tags}</div>
     </div>
@@ -2503,7 +2507,7 @@ async function renderMap2D() {
       .on("mousemove", moveTooltip)
       .on("mouseleave", hideTooltip)
       .on("click", (_event, d) => {
-        if (d.url) window.open(d.url, "_blank", "noopener,noreferrer");
+        openExternalUrl(d.url);
       });
     addHitTargets(mapLayer, markers.slice(0, 32), projection, 12, showTooltip);
   }
@@ -2555,7 +2559,7 @@ function addHitTargets(mapLayer, markers, projection, radius, tooltip) {
     .attr("cy", (item) => projection([item.lon, item.lat])[1])
     .attr("fill", "transparent").attr("pointer-events", "all")
     .on("mouseenter", tooltip).on("mousemove", moveTooltip).on("mouseleave", hideTooltip)
-    .on("click", (_event, item) => { if (item.url) window.open(item.url, "_blank", "noopener,noreferrer"); });
+    .on("click", (_event, item) => { openExternalUrl(item.url); });
 }
 
 function createMapProjection(width, height) {
@@ -3934,7 +3938,7 @@ function renderAlertMarkers(svg, projection, alerts) {
     .on("mousemove", moveTooltip)
     .on("mouseleave", hideTooltip)
     .on("click", (_event, d) => {
-      if (d.url) window.open(d.url, "_blank", "noopener,noreferrer");
+      openExternalUrl(d.url);
     });
 }
 
@@ -3978,7 +3982,7 @@ function renderLegacyInfrastructureLayers(svg, projection, width) {
     .on("mousemove", moveTooltip)
     .on("mouseleave", hideTooltip)
     .on("click", (_event, d) => {
-      if (d.url) window.open(d.url, "_blank", "noopener,noreferrer");
+      openExternalUrl(d.url);
     });
 }
 
@@ -4074,7 +4078,7 @@ function renderCompanyHqLabels(svg, projection, width) {
     .on("mousemove", moveTooltip)
     .on("mouseleave", hideTooltip)
     .on("click", (_event, d) => {
-      if (d.url) window.open(d.url, "_blank", "noopener,noreferrer");
+      openExternalUrl(d.url);
     });
 
   companyGroup
@@ -4119,7 +4123,7 @@ function renderAutoCompanyHqLabels(svg, projection, width) {
     .on("mousemove", moveTooltip)
     .on("mouseleave", hideTooltip)
     .on("click", (_event, d) => {
-      if (d.url) window.open(d.url, "_blank", "noopener,noreferrer");
+      openExternalUrl(d.url);
     });
 
   companyGroup
@@ -4534,6 +4538,15 @@ function formatRelative(value) {
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours}時間前`;
   return formatDateTime(date);
+}
+
+function safeExternalHref(value) {
+  return escapeAttr(safeExternalUrl(value) || "#");
+}
+
+function openExternalUrl(value) {
+  const url = safeExternalUrl(value);
+  if (url) window.open(url, "_blank", "noopener,noreferrer");
 }
 
 function escapeHtml(value = "") {

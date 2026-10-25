@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkLocalRequest, securityHeaders } from "./request-security.mjs";
+import { safeExternalUrl } from "./public/url-security.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -418,7 +420,7 @@ function scoreArticle(article) {
 
 function normalizeGdeltArticle(item) {
   const title = normalizeText(item.title || "");
-  const url = item.url || item.url_mobile || "";
+  const url = safeExternalUrl(item.url) || safeExternalUrl(item.url_mobile);
   const article = {
     id: url || `gdelt-${title}`,
     title,
@@ -453,7 +455,7 @@ function normalizeHackerNewsItem(item) {
     language: "English",
     source: "Hacker News",
     domain: item.url ? safeDomain(item.url) : "news.ycombinator.com",
-    url: item.url || `https://news.ycombinator.com/item?id=${item.id}`,
+    url: safeExternalUrl(item.url) || `https://news.ycombinator.com/item?id=${encodeURIComponent(item.id)}`,
     sourceCountry: "",
     publishedAt: item.time ? new Date(item.time * 1000).toISOString() : new Date().toISOString(),
     score: item.score || 0,
@@ -480,7 +482,7 @@ function normalizeRssArticle(item, tag) {
     language: isProbablyJapanese(item.title) ? "Japanese" : "English",
     source: item.source || "Google News",
     domain: item.link ? safeDomain(item.link) : "news.google.com",
-    url: item.link || "https://news.google.com/",
+    url: safeExternalUrl(item.link) || "https://news.google.com/",
     sourceCountry: tag === "japan" ? "Japan" : "",
     publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
     live: true
@@ -792,7 +794,7 @@ async function fetchGitHubTrending() {
         name: repo.name || "",
         fullName: repo.full_name || repo.name || "",
         description: normalizeText(repo.description || ""),
-        url: repo.html_url || "",
+        url: safeExternalUrl(repo.html_url),
         stars: repo.stargazers_count || 0,
         language: repo.language || "",
         topics,
@@ -814,7 +816,7 @@ function normalizeDevToArticle(item, tag = "ai") {
     language: "English",
     source: "Dev.to",
     domain: "dev.to",
-    url: item.url || "https://dev.to/",
+    url: safeExternalUrl(item.url) || "https://dev.to/",
     sourceCountry: tag === "japan" ? "Japan" : "",
     publishedAt: Number.isNaN(published.getTime()) ? new Date().toISOString() : published.toISOString(),
     score: item.positive_reactions_count || 0,
@@ -878,7 +880,7 @@ async function fetchEarthquakes() {
         title: feature.properties?.title || "Earthquake",
         titleJa: `M${feature.properties?.mag ?? "?"} 地震: ${normalizeText(feature.properties?.place || feature.properties?.title || "地点未取得")}`,
         signalJa: `地政学・供給網リスクの補助指標: M${feature.properties?.mag ?? "?"} 地震。`,
-        url: feature.properties?.url || "https://earthquake.usgs.gov/",
+        url: safeExternalUrl(feature.properties?.url) || "https://earthquake.usgs.gov/",
         lat,
         lon,
         magnitude: feature.properties?.mag,
@@ -1303,8 +1305,7 @@ function sendJson(response, statusCode, payload) {
   const body = JSON.stringify(payload);
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin": "*"
+    "Cache-Control": "no-store"
   });
   response.end(body);
 }
@@ -1337,7 +1338,14 @@ async function sendStatic(response, requestPath) {
 }
 
 const server = createServer(async (request, response) => {
+  for (const [name, value] of Object.entries(securityHeaders)) response.setHeader(name, value);
   try {
+    const rejection = checkLocalRequest(request);
+    if (rejection) {
+      if (rejection.status === 405) response.setHeader("Allow", "GET, HEAD");
+      sendJson(response, rejection.status, { ok: false, message: rejection.message });
+      return;
+    }
     const url = new URL(request.url || "/", `http://${request.headers.host}`);
     if (url.pathname === "/api/monitor") {
       const refresh = url.searchParams.get("refresh") === "1";
